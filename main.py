@@ -28,17 +28,13 @@ debt_investment_page=st.Page(
     icon="💸"
 )
 
-equity_transactions_record=st.Page(
-    title="Record Equity Transaction",
-    page="record_equity_transactions.py",
+transactions_record=st.Page(
+    title="Record Transaction",
+    page="record_transactions.py",
     icon=":material/add:"
 )
 
-debt_transactions_record=st.Page(
-    title="Record Debt Transactions",
-    page="record_debt_transactions.py",
-    icon=":material/add:"
-)
+
 
 transactions_data_page=st.Page(
     title="View All Transaction",
@@ -56,8 +52,7 @@ tax_page=st.Page(
 pages={
     "Main":[dashboard_page,retirement_page],
     "Investments":[equity_investment_page,debt_investment_page],
-    "Record Transactions":[equity_transactions_record,debt_transactions_record],
-    "Transactions":[transactions_data_page],
+    "Transactions":[transactions_record,transactions_data_page],
     "Tax":[tax_page]
 }
 
