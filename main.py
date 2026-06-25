@@ -4,7 +4,7 @@ import streamlit as st
 
 #Setting Up Pages
 dashboard_page=st.Page(
-    page="dashboard.py",
+    page="pages/dashboard.py",
     title="Dashboard",
     icon=":material/dashboard:",
     default=True
@@ -12,25 +12,25 @@ dashboard_page=st.Page(
 
 retirement_page=st.Page(
     title="Retirement Planning",
-    page="retirement_planning.py",
+    page="pages/retirement_planning.py",
     icon="💰"
 )
 
 equity_investment_page=st.Page(
     title="Equity Portfolio",
-    page="equity_investments.py",
+    page="pages/equity_investments.py",
     icon=":material/finance_mode:"
 )
 
 debt_investment_page=st.Page(
     title="Debt Portfolio",
-    page="debt_investments.py",
+    page="pages/debt_investments.py",
     icon="💸"
 )
 
 transactions_record=st.Page(
     title="Record Transaction",
-    page="record_transactions.py",
+    page="pages/record_transactions.py",
     icon=":material/add:"
 )
 
@@ -38,13 +38,13 @@ transactions_record=st.Page(
 
 transactions_data_page=st.Page(
     title="View All Transaction",
-    page="transactions_view.py",
+    page="pages/transactions_view.py",
     icon=":material/swap_horiz:"
 )
 
 tax_page=st.Page(
     title="Tax Harvesting",
-    page="tax.py",
+    page="pages/tax.py",
     icon="🏛️"
 )
 
