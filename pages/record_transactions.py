@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from mftool import Mftool
 from datetime import datetime
-import sqlite3
 from config import EQUITY_LTCG_TAX_RATE,EQUITY_STCG_TAX_RATE,database_file
 from database import get_conn
 
