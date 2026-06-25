@@ -15,7 +15,7 @@ def init_buy_session_state():
     if "amount" not in st.session_state:
         st.session_state["amount"]=0
 
-
+@st.cache_resource
 def get_mf_tool():
     return Mftool()
 
@@ -82,6 +82,7 @@ def store_data():
     with sqlite3.Connection(database_file) as conn:
         conn.execute(record_transaction,data)
         conn.commit()
+    get_data.clear()
 
 
 def show_prev_data():
@@ -99,7 +100,7 @@ def buying_button():
         clear_fields()
         st.session_state["success_msg"]="Transaction Saved Successfully!!!"
 
-
+@st.cache_data
 def get_data():
     with sqlite3.connect(database_file) as conn:
         df=pd.read_sql_query("SELECT * FROM MF_Transactions",conn)
