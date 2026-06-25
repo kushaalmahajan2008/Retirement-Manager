@@ -16,6 +16,9 @@ def init_buy_session_state():
         st.session_state["amount"]=0
 
 
+def get_mf_tool():
+    return Mftool()
+
 @st.cache_data
 def get_mf_data():
     mutual_code_fund=mf.get_scheme_codes()
@@ -49,7 +52,7 @@ def check_fields():
     
     
 def clear_fields():
-    st.session_state["Date"]=datetime.now().date()
+    # st.session_state["Date"]=datetime.now().date()
     st.session_state["Fund Name"]=""
     st.session_state["units"]=0
     st.session_state["amount"]=0
@@ -247,13 +250,6 @@ def show_sell_dialog():
     st.caption("Note: This analysis is provided for informational purposes only and should not be considered tax advice.")
 
 
-
-
-
-
-    
-
-
 def selling_button():
     fields_check=check_fields()
     if fields_check:
@@ -262,6 +258,24 @@ def selling_button():
         show_sell_dialog()
         clear_fields()
         st.session_state["success_msg"]="Transaction Saved Successfully!!!"
+
+
+def all_funds_list(mutual_fund_code):
+
+
+    #Getting Scheme Name 
+    options_list=list(mutual_fund_code.keys())
+    options_list.pop(0)
+    options_list.insert(0,"Select Mutual Fund Name")
+    return options_list
+
+
+def portfolio_funds_list():
+    #Getting Funds List From Portfolio
+    portfolio_data_df=get_data()
+    options_list=portfolio_data_df["Fund_Name"].unique().tolist()
+    options_list.insert(0,"Select Mutual Fund Name")
+    return portfolio_data_df,options_list
 
 
 
@@ -288,7 +302,7 @@ if asset_type=="Mutual Fund":
     #Initializing Buying Form
 
     init_buy_session_state()
-    mf=Mftool()
+    mf=get_mf_tool()
     choice=st.radio(label="",options=["Buy","Sell"],horizontal=True,label_visibility="collapsed",key="choice")
     
     #----–––-----------------------------------------------------------Transaction type is mf buy----–––-----------------------------------------------------------
@@ -299,10 +313,12 @@ if asset_type=="Mutual Fund":
         #Getting Scheme Names And Codes Data
         mutual_code_fund,mutual_fund_code=get_mf_data()
 
-        #Getting Scheme Name 
-        options_list=list(mutual_fund_code.keys())
-        options_list.pop(0)
-        options_list.insert(0,"Select Mutual Fund Name")
+        check=st.checkbox("Portfolio Funds Only",value=True)
+        if check:
+            portfolio_data_df,options_list=portfolio_funds_list()
+        else:
+            options_list=all_funds_list(mutual_fund_code)
+
         scheme_name=st.selectbox("Select Mutual Fund:",options=options_list,key="Fund Name")
 
         #Displaying Scheme Code After Name is selected
@@ -345,10 +361,8 @@ if asset_type=="Mutual Fund":
     elif choice=="Sell":
         transaction_date=st.date_input("Transaction Date:",format="DD/MM/YYYY",key="Date")
 
-        #Getting Funds List From Portfolio
-        portfolio_data_df=get_data()
-        options_list=portfolio_data_df["Fund_Name"].unique().tolist()
-        options_list.insert(0,"Select Mutual Fund Name")
+        portfolio_data_df,options_list=portfolio_funds_list()
+
         scheme_name=st.selectbox("Select Mutual Fund:",options=options_list,key="Fund Name")
 
         if scheme_name!="" and scheme_name!="Select Mutual Fund Name":
