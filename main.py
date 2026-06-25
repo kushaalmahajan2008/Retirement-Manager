@@ -17,13 +17,13 @@ retirement_page=st.Page(
 )
 
 equity_investment_page=st.Page(
-    title="Equity Investments",
+    title="Equity Portfolio",
     page="equity_investments.py",
     icon=":material/finance_mode:"
 )
 
 debt_investment_page=st.Page(
-    title="Debt Investments",
+    title="Debt Portfolio",
     page="debt_investments.py",
     icon="💸"
 )
@@ -51,7 +51,7 @@ tax_page=st.Page(
 #Grouping Pages
 pages={
     "Main":[dashboard_page,retirement_page],
-    "Investments":[equity_investment_page,debt_investment_page],
+    "Portfolio":[equity_investment_page,debt_investment_page],
     "Transactions":[transactions_record,transactions_data_page],
     "Tax":[tax_page]
 }

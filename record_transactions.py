@@ -3,7 +3,7 @@ import pandas as pd
 from mftool import Mftool
 from datetime import datetime
 import sqlite3
-from config import EQUITY_LTCG_TAX_RATE,EQUITY_STCG_TAX_RATE
+from config import EQUITY_LTCG_TAX_RATE,EQUITY_STCG_TAX_RATE,database_file
 
 #----------------------------------------------------------Functions----------------------------------------------------------
 
@@ -79,7 +79,7 @@ def store_data():
     record_transaction="""INSERT INTO MF_Transactions
     (Date,Transaction_Type,Fund_Name,Scheme_Code,Units,Amount)
     VALUES(?,?,?,?,?,?)"""
-    with sqlite3.Connection("retirement_manager.db") as conn:
+    with sqlite3.Connection(database_file) as conn:
         conn.execute(record_transaction,data)
         conn.commit()
 
@@ -101,7 +101,7 @@ def buying_button():
 
 
 def get_data():
-    with sqlite3.connect("retirement_manager.db") as conn:
+    with sqlite3.connect(database_file) as conn:
         df=pd.read_sql_query("SELECT * FROM MF_Transactions",conn)
     df["Date"] = pd.to_datetime(
     df["Date"],
