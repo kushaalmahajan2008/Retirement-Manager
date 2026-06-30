@@ -1,6 +1,6 @@
 import streamlit as st
 from config import database_file
-from portfolio_utils import portfolio_builder,portfolio_xirr,category_allocation,build_portfolio_value_history,investment_history,monthly_flow
+from portfolio_utils import portfolio_builder,portfolio_xirr,category_allocation,build_portfolio_value_history,investment_history,monthly_flow,format_inr
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -12,26 +12,7 @@ st.set_page_config(layout="wide")
 
 st.markdown("## Equity Portfolio")
 
-def format_inr(number):
-    number = round(number)
-    sign = "-" if number < 0 else ""
-    number = abs(number)
 
-    s = str(number)
-    if len(s) <= 3:
-        return f"{sign}₹{s}"
-
-    last3 = s[-3:]
-    rest = s[:-3]
-
-    parts = []
-    while len(rest) > 2:
-        parts.insert(0, rest[-2:])
-        rest = rest[:-2]
-    if rest:
-        parts.insert(0, rest)
-
-    return f"{sign}₹{','.join(parts)},{last3}"
 
 
 
@@ -120,7 +101,9 @@ event=st.dataframe(
         "Current Value": st.column_config.NumberColumn("Current Value"),
         "P&L": st.column_config.NumberColumn("P&L"),
         "Absolute Returns": st.column_config.NumberColumn("Absolute Return", format="%.2f%%"),
-        "XIRR": st.column_config.NumberColumn("XIRR", format="%.2f%%")
+        "XIRR": st.column_config.NumberColumn("XIRR", format="%.2f%%"),
+        "Full Fund Name":None,
+        "Code":None
     }
 )
 
@@ -128,12 +111,13 @@ event=st.dataframe(
 
 
 selected_cells = event.selection.get("cells", [])
-# df=pd.DataFrame(df_list)
 if selected_cells:
     row_idx, col_name = selected_cells[0]
     selected_fund = df.iloc[row_idx]["Fund Name"]
-    st.session_state["selected_fund"] = selected_fund
-    # st.switch_page("pages/fund_details.py")
+    # st.session_state["selected_fund"] = selected_fund
+    st.session_state["selected_fund"]=df.loc[df["Fund Name"]==selected_fund]
+    st.session_state["data"]=df
+    st.switch_page("pages/fund_details.py")
 
 #---------------------------------Pie Chart---------------------------------
 

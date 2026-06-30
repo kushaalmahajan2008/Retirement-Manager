@@ -15,6 +15,27 @@ def get_data():
     errors="coerce")
     return df
 
+def format_inr(number):
+    number = round(number)
+    sign = "-" if number < 0 else ""
+    number = abs(number)
+
+    s = str(number)
+    if len(s) <= 3:
+        return f"{sign}₹{s}"
+
+    last3 = s[-3:]
+    rest = s[:-3]
+
+    parts = []
+    while len(rest) > 2:
+        parts.insert(0, rest[-2:])
+        rest = rest[:-2]
+    if rest:
+        parts.insert(0, rest)
+
+    return f"{sign}₹{','.join(parts)},{last3}"
+
 
 @st.cache_resource
 def get_mf_tool():
@@ -44,6 +65,7 @@ def category_allocation():
         else:
             category_allocation_dict[category]=round(current_value_var)
     return category_allocation_dict
+
 
 def portfolio_funds_list():
     #Getting Funds List From Portfolio
@@ -170,6 +192,8 @@ def portfolio_builder():
             "P&L":current_value_var-invested_value_var,
             "Absolute Returns": (current_value_var/invested_value_var-1)*100,
             "XIRR":get_xirr(portfolio_data_df,fund,current_value_var)*100,
+            "Full Fund Name":fund,
+            "Code":portfolio_data_df.loc[(portfolio_data_df["Fund_Name"]==fund),"Scheme_Code"].iloc[0]
             # "Category":get_scheme_category(portfolio_data_df,fund)
         })
     
