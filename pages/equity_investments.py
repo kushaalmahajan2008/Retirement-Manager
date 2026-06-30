@@ -1,12 +1,12 @@
 import streamlit as st
 from config import database_file
-from portfolio_utils import portfolio_builder,portfolio_xirr
+from portfolio_utils import portfolio_builder,portfolio_xirr,category_allocation
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 
 st.markdown("## Equity Portfolio")
-df_list=portfolio_builder()
 
 def format_inr(number):
     number = round(number)
@@ -37,66 +37,52 @@ def color_pl(value):
     elif value < 0:
         return "color: #FF5252; font-weight: bold;"
     return ""
+
+
+
+df_list=portfolio_builder()
 df=pd.DataFrame(df_list)
 
 
 
-total_row = {
-    "Fund Name": "TOTAL",
-    "Invested Value": df["Invested Value"].sum(),
-    "Current Value": df["Current Value"].sum(),
-    "P&L": df["P&L"].sum(),
-    "XIRR":portfolio_xirr(df["Current Value"].sum()),
-    "Absolute Returns":((df["Current Value"].sum()/df["Invested Value"].sum()-1)*100),
 
-}
-df = pd.concat(
-    [df, pd.DataFrame([total_row])],
-    ignore_index=True
-)
-
-def highlight_total(row):
-    if row["Fund Name"] == "TOTAL":
-        return ["background-color: #262730; font-weight: bold; border-top: 2 px solid #555;"] * len(row)
-    return [""] * len(row)
 
 
 #-----------------------------------------------------------------------------Body-----------------------------------------------------------------------------
 
-row1=st.columns(6)
 
-total_row = df.loc[
-    df["Fund Name"] == "TOTAL"
-].iloc[0]
+#----------------Summary Cards----------------#
+row1=st.columns(5)
 
-invested = total_row["Invested Value"]
-current = total_row["Current Value"]
-profit = total_row["P&L"]
-return_pct = total_row["Absolute Returns"]
-xirr = total_row["XIRR"]
-holdings=len(df)-1
+
+
+invested = df["Invested Value"].sum()
+current = df["Current Value"].sum()
+profit = df["P&L"].sum()
+return_pct = ((df["Current Value"].sum()/df["Invested Value"].sum()-1)*100)
+xirr = portfolio_xirr(df["Current Value"].sum())
+holdings=len(df)
 
 row1[0].metric("Invested Value",format_inr(invested),border=True)
-row1[1].metric("Absolute Returns",f"{return_pct:.2f}%",border=True)
+row1[1].metric("Current Value",format_inr(current),border=True)
+row1[2].metric("P&L",format_inr(profit),border=True)
+row1[3].metric("Absolute Returns",f"{return_pct:.2f}%",border=True)
+row1[4].metric("XIRR",f"{xirr:.2f}%",border=True)
 
-row1[2].metric("Current Value",format_inr(current),border=True)
-row1[3].metric("XIRR",f"{xirr:.2f}%",border=True)
-
-row1[4].metric("P&L",format_inr(profit),border=True)
-row1[5].metric("No. Of Holdings",holdings,border=True)
-
+# row1[5].metric("No. Of Holdings",holdings,border=True)
 
 
 
 
+#--------------Portfolio Data/Table--------------#
 
 
 
+df=df.sort_values(by="Invested Value",ascending=False)
 
 
 styled_df = (
     df.style
-    .apply(highlight_total, axis=1)
     .map(color_pl, subset=["P&L"])
     .map(color_pl, subset=["Absolute Returns"])
     .map(color_pl, subset=["XIRR"])
@@ -110,22 +96,8 @@ formated_df=styled_df.format({
     "Absolute Returns": "{:.2%}",
     "XIRR": "{:.2%}",
     "Units Holding":"{:.3f}"
-},na_rep=""
+}
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -134,7 +106,7 @@ event=st.dataframe(
     on_select="rerun",
     hide_index=True,
     selection_mode="single-cell",
-    use_container_width=True,
+    width="stretch",
     column_config={
         "Fund Name": st.column_config.TextColumn("Fund Name"),
         "Invested Value": st.column_config.NumberColumn("Invested Value"),
@@ -149,10 +121,39 @@ event=st.dataframe(
 )
 
 selected_cells = event.selection.get("cells", [])
-df=pd.DataFrame(df_list)
+# df=pd.DataFrame(df_list)
 if selected_cells:
     row_idx, col_name = selected_cells[0]
     selected_fund = df.iloc[row_idx]["Fund Name"]
     st.session_state["selected_fund"] = selected_fund
     # st.switch_page("pages/fund_details.py")
     st.write(st.session_state.selected_fund)
+
+#---------------------------------Pie Chart---------------------------------
+
+col1,col2=st.columns(2)
+#Fund Allocation
+
+allocation_dict={}
+for idx,row in df.iterrows():
+     allocation_dict[row["Fund Name"]]=f'{row["Current Value"]:.0f}'
+
+allocation=pd.DataFrame(allocation_dict.items(),columns=["Fund Name","Current Value"]).sort_values(by="Current Value",ascending=False)
+fig=px.pie(allocation,values="Current Value",names="Fund Name")
+fig.update_traces(direction="clockwise")
+col1.plotly_chart(fig)
+
+
+#Category Allocation
+
+category_allocation=pd.DataFrame(category_allocation().items(),columns=["Category","Current Value"]).sort_values(by="Current Value",ascending=False)
+category_allocation["Category"] = (
+    category_allocation["Category"]
+    .str.split(" - ")
+    .str[-1]
+)
+fig=px.pie(category_allocation,values="Current Value",names="Category")
+fig.update_traces(direction="clockwise")
+
+col2.plotly_chart(fig)
+

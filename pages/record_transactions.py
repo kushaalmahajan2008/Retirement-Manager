@@ -17,7 +17,11 @@ def init_buy_session_state():
 
 @st.cache_resource
 def get_mf_tool():
-    return Mftool()
+    try:
+        return Mftool()
+    except Exception as e:
+        st.error("Couldn't connect to the AMFI mutual fund feed right now. Try refreshing in a bit.")
+        st.stop()
 
 @st.cache_data
 def get_mf_data():

@@ -19,7 +19,32 @@ def get_data():
 
 @st.cache_resource
 def get_mf_tool():
-    return Mftool()
+    try:
+        return Mftool()
+    except Exception as e:
+        st.error("Couldn't connect to the AMFI mutual fund feed right now. Try refreshing in a bit.")
+        st.stop()
+
+@st.cache_data
+def get_scheme_category(portfolio_data,fund_name):
+    mf = get_mf_tool()
+    code=portfolio_data.loc[(portfolio_data["Fund_Name"]==fund_name),"Scheme_Code"].iloc[0]
+    details = mf.get_scheme_details(code)
+    return details.get("scheme_category", "Uncategorized")
+
+def category_allocation():
+    category_allocation_dict={}
+    portfolio_data_df,funds_list=portfolio_funds_list()
+    for fund in funds_list:
+        net_units_var=net_units(portfolio_data_df,fund)
+        nav=float(fund_nav(portfolio_data_df,fund))
+        current_value_var=nav*net_units_var
+        category=get_scheme_category(portfolio_data_df,fund)
+        if category in category_allocation_dict:
+            category_allocation_dict[category]=round(category_allocation_dict[category]+current_value_var,0)
+        else:
+            category_allocation_dict[category]=round(current_value_var)
+    return category_allocation_dict
 
 def portfolio_funds_list():
     #Getting Funds List From Portfolio
@@ -145,7 +170,8 @@ def portfolio_builder():
             "Current Value": current_value_var,
             "P&L":current_value_var-invested_value_var,
             "Absolute Returns": (current_value_var/invested_value_var-1)*100,
-            "XIRR":get_xirr(portfolio_data_df,fund,current_value_var)*100
+            "XIRR":get_xirr(portfolio_data_df,fund,current_value_var)*100,
+            # "Category":get_scheme_category(portfolio_data_df,fund)
         })
     
     return portfolio
