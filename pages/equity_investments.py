@@ -1,8 +1,12 @@
 import streamlit as st
 from config import database_file
-from portfolio_utils import portfolio_builder,portfolio_xirr,category_allocation
+from portfolio_utils import portfolio_builder,portfolio_xirr,category_allocation,build_portfolio_value_history,investment_history,monthly_flow
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from dateutil.relativedelta import relativedelta
+
+
 
 st.set_page_config(layout="wide")
 
@@ -120,6 +124,9 @@ event=st.dataframe(
     }
 )
 
+# Redirecting To details page
+
+
 selected_cells = event.selection.get("cells", [])
 # df=pd.DataFrame(df_list)
 if selected_cells:
@@ -127,13 +134,12 @@ if selected_cells:
     selected_fund = df.iloc[row_idx]["Fund Name"]
     st.session_state["selected_fund"] = selected_fund
     # st.switch_page("pages/fund_details.py")
-    st.write(st.session_state.selected_fund)
 
 #---------------------------------Pie Chart---------------------------------
 
+
 col1,col2=st.columns(2)
 #Fund Allocation
-
 allocation_dict={}
 for idx,row in df.iterrows():
      allocation_dict[row["Fund Name"]]=f'{row["Current Value"]:.0f}'
@@ -157,3 +163,158 @@ fig.update_traces(direction="clockwise")
 
 col2.plotly_chart(fig)
 
+
+tab1, tab2, tab3, tab4, tab5= st.tabs([
+    "📊 Growth",
+    "📈 Portfolio History",
+    "📅 Cashflow Timeline",
+    "🏆 Returns",
+    "⚠️ Risk Parameters"
+])
+
+
+#History And Future Projections Chart
+history_df=(build_portfolio_value_history('MS'))
+
+current_value=current
+current_xirr=xirr/100
+
+today = history_df["Date"].iloc[-1]
+projection_dates = [today + relativedelta(years=y) for y in range(0, 21)]
+projection_values = [round(current_value * (1 + current_xirr) ** y,0) for y in range(0, 21)]
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=history_df["Date"], y=history_df["Portfolio Value"],
+    mode="lines",name="Portfolio Value (Actual)",
+    line=dict( width=3, dash="solid"),
+    hovertemplate="₹%{y:,.0f}<extra></extra>"
+))
+
+fig.add_trace(go.Scatter(
+    x=projection_dates, y=projection_values,
+    mode="lines", name="Projected (at current XIRR)",
+    line=dict(color="#00C853", width=2, dash="dot"),
+    hovertemplate="₹%{y:,.0f}<extra></extra>"
+))
+fig.add_vline(x=today, line_dash="dash", line_color="gray", annotation_text="Today")
+
+fig.add_trace(
+    go.Scatter(
+        x=projection_dates,
+        y=projection_values,
+        mode="lines",
+        line=dict(width=0),
+        fill="tozeroy",
+        fillcolor="rgba(0,200,83,0.08)",
+        showlegend=False,
+        hoverinfo="skip"
+    )
+)
+
+fig.update_layout(
+    template="plotly_dark",
+    hovermode="x unified",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    yaxis_title="Portfolio Value (₹)"
+)
+
+with tab1:
+    st.write("Portfolio History & Future Projection")
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Note: Projections are based on Current Portfolio XIRR. Actual Return May Vary")
+
+
+
+#Portfolio Value V/s Invested Value
+history_df=build_portfolio_value_history('W')
+investment_history_df=investment_history()
+
+fig=go.Figure()
+fig.add_trace(go.Scatter(
+    x=history_df["Date"], y=history_df["Portfolio Value"],
+    mode="lines",name="Portfolio Value",
+    line=dict(color="#00C853", width=2, dash="solid"),
+    hovertemplate="₹%{y:,.0f}<extra></extra>"
+))
+
+fig.add_trace(go.Scatter(
+    x=investment_history_df["Date"],y=investment_history_df["Invested Amount"],
+    mode="lines",name="Invested Value",
+    line=dict(width=2, dash="solid"),
+    hovertemplate="₹%{y:,.0f}<extra></extra>"
+))
+fig.update_layout(
+    template="plotly_dark",
+    hovermode="x unified",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    yaxis_title="Portfolio Value (₹)"
+)
+
+with tab2:
+    st.write("Portfolio Value V/s Invested Value")
+    st.plotly_chart(fig,width="stretch")
+
+
+#Investment Timeline
+monthly_flows=monthly_flow()
+fig_flows = go.Figure()
+
+fig_flows.add_trace(go.Bar(
+    x=monthly_flows["Month"], y=monthly_flows["Buy"],
+    name="Inflow (Buy)", marker_color="#00C853",
+    hovertemplate="₹%{y:,.0f}<extra></extra>"
+))
+
+fig_flows.add_trace(go.Bar(
+    x=monthly_flows["Month"], y=monthly_flows["Sell"],
+    name="Outflow (Sell)", marker_color="#FF5252",
+    hovertemplate="₹%{customdata:,.0f}<extra></extra>",
+    customdata=-monthly_flows["Sell"]  # show as a positive number on hover, even though the bar is negative
+))
+
+fig_flows.add_hline(y=0, line_color="gray", line_width=1)
+
+fig_flows.update_layout(
+    template="plotly_dark",
+    barmode="relative",
+    xaxis_title="Month",
+    yaxis_title="Amount (₹)",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    margin=dict(l=10, r=10, t=60, b=10),
+)
+with tab3:
+    st.write("Monthly Inflows v/s Outflows")
+    st.plotly_chart(fig_flows,width="stretch")
+
+
+
+
+#Returns Comparison 
+
+returns_df = df.sort_values("XIRR", ascending=True)
+
+colors = ["#FF5252" if v < 0 else "#00C853" for v in returns_df["XIRR"]]
+fig_returns = go.Figure(go.Bar(
+    x=returns_df["XIRR"],
+    y=returns_df["Fund Name"],
+    orientation="h",
+    marker_color=colors,
+    text=[f"{v:.2f}%" for v in returns_df["XIRR"]],
+    textposition="outside",
+    hovertemplate="%{y}: %{x:.2f}%<extra></extra>"
+))
+
+fig_returns.update_layout(
+    template="plotly_dark",
+    title="Returns by Fund (XIRR)",
+    xaxis_title="XIRR (%)",
+    margin=dict(l=10, r=10, t=40, b=10),
+)
+
+with tab4:
+    st.write("Returns Comparison")
+    st.plotly_chart(fig_returns, use_container_width=True)
+
+with tab5:
+    st.title("Coming Soon...")
+    st.write("risk parameters in metrics")
