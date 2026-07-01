@@ -142,6 +142,7 @@ category_allocation["Category"] = (
     .str.split(" - ")
     .str[-1]
 )
+
 fig=px.pie(category_allocation,values="Current Value",names="Category")
 fig.update_traces(direction="clockwise")
 

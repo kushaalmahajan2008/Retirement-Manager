@@ -202,7 +202,7 @@ def portfolio_builder():
 
 
 
-
+@st.cache_data
 def get_historical_nav(code):
     mf=get_mf_tool()
     df=mf.get_scheme_historical_nav(code,as_Dataframe=True)
